@@ -3,6 +3,12 @@
 Android app that tracks an order's delivery in real time on a map and lets the
 customer chat with the driver, backed by a Kotlin gRPC server.
 
+## Demo
+
+https://github.com/user-attachments/assets/4d6a4e66-af5a-4a13-874c-1362fd47c6bd
+
+
+
 ## Modules
 
 - `app` — the Android application shell, wires up navigation between features.
