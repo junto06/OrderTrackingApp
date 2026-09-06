@@ -1,0 +1,5 @@
+<resources>
+    <string name="chat_with_driver">Chat with driver</string>
+    <string name="message_the_driver">Message the driver</string>
+    <string name="send">Send</string>
+</resources>

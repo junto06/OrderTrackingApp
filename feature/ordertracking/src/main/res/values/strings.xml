@@ -1,0 +1,16 @@
+<resources>
+    <string name="orders_title">Orders</string>
+    <string name="order_number_format">Order #%1$s</string>
+    <string name="track_order_title">Track Order</string>
+    <string name="tracking_error">Something went wrong while tracking your order</string>
+    <string name="arrived">Arrived</string>
+    <string name="remaining_time_format">%1$d:%2$02d remaining</string>
+    <string name="status_waiting_for_updates">Waiting for updates</string>
+    <string name="status_driver_assigned">Driver assigned</string>
+    <string name="status_picked_up">Order picked up</string>
+    <string name="status_delivered">Order delivered</string>
+    <string name="status_payment_pending">Payment pending</string>
+    <string name="status_payment_declined">Payment declined</string>
+    <string name="status_order_not_found">Order not found</string>
+    <string name="chat_with_driver">Chat with driver</string>
+</resources>

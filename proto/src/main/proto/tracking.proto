@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package com.mudassar.ordertracking;
+
+service CustomerTrackingService {
+  rpc Subscribe(SubscribeRequest) returns (stream CustomerEvent);
+}
+
+message SubscribeRequest {
+  string order_id = 1;
+}
+
+message CustomerEvent {
+  oneof event {
+    DriverLocation location = 1;
+    OrderStatus status = 2;
+  }
+  int32 eta_seconds = 3;
+}
+
+message DriverLocation {
+  double latitude = 1;
+  double longitude = 2;
+  int64 timestamp = 3;
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  DRIVER_ASSIGNED = 1;
+  PICKED_UP = 2;
+  DELIVERED = 3;
+  PENDING_PAYMENT = 4;
+  PAYMENT_DECLINED = 5;
+  ORDER_NOT_FOUND = 6;
+}

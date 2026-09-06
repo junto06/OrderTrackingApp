@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.mudassar.ordertracking;
+
+service ChatService {
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);
+}
+
+message ChatMessage {
+  string id = 5;
+  string order_id = 1;
+  Sender sender = 2;
+  string text = 3;
+  int64 timestamp = 4;
+}
+
+enum Sender {
+  SENDER_UNSPECIFIED = 0;
+  CUSTOMER = 1;
+  DRIVER = 2;
+}
