@@ -9,7 +9,8 @@ android {
 
 dependencies {
     api(projects.core.navigation)
-    implementation(projects.core.rpc)
+    implementation(projects.core.base)
     implementation(projects.proto)
     implementation(libs.grpc.okhttp)
+    implementation(libs.timber)
 }

@@ -6,23 +6,21 @@ import androidx.lifecycle.viewModelScope
 import com.mudassar.feature.chat.domain.ChatMessage
 import com.mudassar.feature.chat.domain.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val chatRepository: ChatRepository,
 ) : ViewModel() {
-    private val orderId: String = checkNotNull(savedStateHandle["orderId"])
+    val orderId: String = checkNotNull(savedStateHandle["orderId"])
 
     val messages: StateFlow<List<ChatMessage>> =
         chatRepository.observeMessages(orderId)
-            .scan(emptyList<ChatMessage>()) { messages, message -> messages + message }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),

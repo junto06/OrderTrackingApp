@@ -24,8 +24,14 @@ android {
 
 dependencies {
     implementation(projects.core.common)
+    implementation(projects.core.base)
     implementation(projects.feature.ordertracking)
     implementation(projects.feature.chat)
+    implementation(projects.chatSync)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.startup.runtime)
+    implementation(libs.timber)
+    ksp(libs.androidx.hilt.compiler)
 }

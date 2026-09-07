@@ -14,7 +14,8 @@ android {
 
 dependencies {
     api(projects.feature.base)
-    implementation(projects.core.rpc)
+    implementation(projects.core.base)
+    implementation(projects.proto)
     implementation(projects.feature.chatApi)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.compose.ui)

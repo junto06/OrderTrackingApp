@@ -2,4 +2,6 @@
     <string name="chat_with_driver">Chat with driver</string>
     <string name="message_the_driver">Message the driver</string>
     <string name="send">Send</string>
+    <string name="chat_notifications_channel_name">Chat Messages</string>
+    <string name="driver">Driver</string>
 </resources>

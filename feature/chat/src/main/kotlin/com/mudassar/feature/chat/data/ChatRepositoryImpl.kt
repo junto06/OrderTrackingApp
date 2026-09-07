@@ -1,63 +1,83 @@
 package com.mudassar.feature.chat.data
 
-import com.mudassar.core.rpc.ChatApi
+import com.mudassar.core.base.ErrorLogger
+import com.mudassar.feature.chat.data.persistence.ChatDao
+import com.mudassar.feature.chat.data.persistence.ChatMessageEntity
+import com.mudassar.feature.chat.data.persistence.SyncStatus
 import com.mudassar.feature.chat.domain.ChatMessage
 import com.mudassar.feature.chat.domain.ChatRepository
-import java.util.Collections
+import com.mudassar.feature.chat.domain.ChatSyncScheduler
+import com.mudassar.feature.chat.domain.Sender
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-
-private const val MESSAGE_CACHE_SIZE = 200
-private const val MAX_CACHED_ORDERS = 5
 
 @Singleton
 class ChatRepositoryImpl @Inject constructor(
-    private val chatApi: ChatApi,
+    private val rpcChatApi: RpcChatApi,
+    private val chatDao: ChatDao,
+    private val chatSyncScheduler: ChatSyncScheduler,
+    private val errorLogger: ErrorLogger,
 ) : ChatRepository {
 
-    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val syncMutex = Mutex()
 
-    private class CachedOrder(val messages: MutableSharedFlow<ChatMessage>, val job: Job)
-
-    //the comms layer for an order stays alive in the background regardless of
-    //whether its chat screen is open, but only for the most recently touched orders
-    //evicted order's gRPC stream is cancelled instead of running forever unattended.
-    private val messageCache = Collections.synchronizedMap(
-        object : LinkedHashMap<String, CachedOrder>(MAX_CACHED_ORDERS, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedOrder>): Boolean {
-                if (size <= MAX_CACHED_ORDERS) return false
-                eldest.value.job.cancel()
-                return true
-            }
-        },
-    )
-
-    override fun observeMessages(orderId: String): Flow<ChatMessage> =
-        cacheFor(orderId).messages.asSharedFlow()
+    override fun observeMessages(orderId: String): Flow<List<ChatMessage>> =
+        chatDao.getMessagesForOrder(orderId)
+            .map { list -> list.map { it.toDomain() } }
 
     override suspend fun sendMessage(orderId: String, text: String) {
-        chatApi.sendMessage(orderId, text)
+        val messageId = UUID.randomUUID().toString()
+        val pendingMessage = ChatMessageEntity(
+            id = messageId,
+            orderId = orderId,
+            sender = Sender.CUSTOMER.name,
+            text = text,
+            timestamp = System.currentTimeMillis(),
+            syncStatus = SyncStatus.PENDING
+        )
+
+        chatDao.upsertMessage(pendingMessage)
+
+        val success = sendMessage(pendingMessage)
+        if (!success) {
+            chatSyncScheduler.scheduleSync()
+        }
     }
 
-    private fun cacheFor(orderId: String): CachedOrder =
-        messageCache.computeIfAbsent(orderId) { id ->
-            val messages = MutableSharedFlow<ChatMessage>(replay = MESSAGE_CACHE_SIZE)
-            val job = repositoryScope.launch {
-                chatApi.observeMessages(id)
-                    .map { it.toDomain() }
-                    .collect {
-                        messages.emit(it)
-                    }
+    override suspend fun syncPendingMessages(): Boolean = syncMutex.withLock {
+        val pendingMessages = chatDao.getPendingMessages()
+        if (pendingMessages.isEmpty()) return@withLock true
+        buildList {
+            for (message in pendingMessages) {
+                add(sendMessage(message))
             }
-            CachedOrder(messages, job)
+        }.all { it }
+    }
+
+    private suspend fun sendMessage(message: ChatMessageEntity): Boolean {
+        return try {
+            rpcChatApi.sendMessage(
+                orderId = message.orderId,
+                text = message.text,
+                id = message.id //idempotencyKey
+            )
+            chatDao.upsertMessage(
+                message.copy(
+                    syncStatus = SyncStatus.SENT
+                )
+            )
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            errorLogger.log(e)
+            false
         }
+    }
 }
