@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,22 +38,32 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mudassar.core.navigation.HasNavigator
-import com.mudassar.core.navigation.Navigator
 import com.mudassar.core.navigation.goBack
 import com.mudassar.feature.base.BaseFragment
-import com.mudassar.feature.base.R as BaseR
 import com.mudassar.feature.chat.R
 import com.mudassar.feature.chat.domain.ChatMessage
 import com.mudassar.feature.chat.domain.Sender
+import com.mudassar.feature.chatapi.ChatTracker
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import com.mudassar.feature.base.R as BaseR
 
 @AndroidEntryPoint
 class ChatFragment : BaseFragment() {
     private val viewModel: ChatViewModel by viewModels()
+    @Inject
+    lateinit var chatTracker: ChatTracker
 
     @Composable
     override fun Content() {
+        val orderId = viewModel.orderId
+        DisposableEffect(orderId) {
+            chatTracker.setActiveOrder(orderId)
+            onDispose {
+                chatTracker.setActiveOrder(null)
+            }
+        }
+
         ChatScreen(
             viewModel = viewModel,
             onBackClick = { navigator.goBack() }
@@ -130,6 +142,7 @@ private fun MessageInputBar(onSend: (String) -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+                .imePadding()
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

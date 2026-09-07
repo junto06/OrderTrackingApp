@@ -4,6 +4,9 @@
     <bytecodeTargetLevel target="11">
       <module name="OrderTracking.app" target="25" />
       <module name="OrderTracking.ordertracking" target="25" />
+      <module name="OrderTrackingApp.core.rpc" target="25" />
+      <module name="OrderTrackingApp.feature.chat-domain" target="25" />
+      <module name="OrderTrackingApp.feature.chat-sync" target="25" />
     </bytecodeTargetLevel>
   </component>
 </project>
